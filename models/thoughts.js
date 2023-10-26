@@ -1,49 +1,56 @@
-const mongoose = require('mongoose');
+const { Schema, model } = require("mongoose");
+const Reaction = require("./reactions");
 
-const thoughtSchema = new mongoose.Schema({
-  thoughtText: {
-    type: String,
-    required: true,
-    minlength: 1,
-    maxlength: 280,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-    get: (timestamp) => dateFormat(timestamp),
-  },
-  username: {
-    type: String,
-    required: true,
-  },
-  reactions: [
-    {
-      reactionId: {
-        type: mongoose.Schema.Types.ObjectId,
-        default: () => new mongoose.Types.ObjectId(),
-      },
-      reactionBody: {
+
+// Schema to create Thought model
+const thoughtSchema = new Schema({
+    thoughtText: {
         type: String,
-        required: true,
-        maxlength: 280,
-      },
-      username: {
-        type: String,
-        required: true,
-      },
-      createdAt: {
+        require: true,
+        minLength: 1,
+        maxLength: 280,
+    },
+    createdAt: {
         type: Date,
         default: Date.now,
-        get: (timestamp) => dateFormat(timestamp),
-      },
     },
-  ],
+    username: {
+        type: String,
+        required: true,
+    },
+    reactions: [Reaction],
+},
+    {
+        toJSON: {
+            virtuals: true,
+            getters: true,
+        },
+        id: false,
+    }
+);
+
+thoughtSchema.path("createdAt").get(function (timestamp) {
+    return formatDate(timestamp);
 });
 
-thoughtSchema.virtual('reactionCount').get(function () {
-  return this.reactions.length;
+function formatDate(timestamp) {
+    const options = {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+    };
+    return new Date(timestamp).toLocaleString(undefined, options);
+}
+
+// Virtual to get total count of reactions on retrieval
+thoughtSchema.virtual("reactionCount").get(function () {
+    return this.reactions.length;
 });
 
-const Thought = mongoose.model('Thought', thoughtSchema);
+// Create the Thought model using the thoughtSchema
+const Thought = model("thought", thoughtSchema);
 
 module.exports = Thought;
